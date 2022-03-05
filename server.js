@@ -14,7 +14,7 @@ NOTES
 
 const net = require("net");
 const logger = require("./logger");
-const { PacketParser, Packet } = require("./helpers/helpers");
+const { PacketParser, Packet } = require("./helpers/Packet");
 
 const server = net.createServer().on("error", (err) => {
   logger.error(err);
