@@ -13,39 +13,68 @@ NOTES
 */
 
 const net = require("net");
+const NodeRSA = require("node-rsa");
 const logger = require("./logger");
-const { PacketParser, Packet } = require("./helpers/Packet");
+const { PacketParser } = require("./helpers/Packet");
+const PacketMessager = require("./helpers/PacketMessager");
 
 const server = net.createServer().on("error", (err) => {
   logger.error(err);
 });
 
+// Create a new RSA keypair
+const key = new NodeRSA({ b: 512 });
+// Variable to store the clients
 let clients = [];
 
 server.on("connection", (socket) => {
   // Unique ID for each client
-  socket.id = Math.random().toString(36).substring(2, 15);
+  socket.id = Math.random().toString(36).substring(2, 15); // 15 random characters
   // Add client to the list of clients
   clients.push({ [socket.id]: socket });
+
   logger.info(`${socket.id} connected`);
 
   socket.on("data", (data) => {
     try {
       let packet = PacketParser(data.toString());
-      logger.info(packet);
+      switch (packet.type) {
+        case "EXC":
+          if (!socket.publicKey) {
+            // Write the key to the clients list
+            clients[socket.id] = packet.message;
+            // Send the key to the client
+            socket.write(PacketMessager.Exchange(key.exportKey("public")));
+            socket.end();
+          }
+          break;
+        case "MES":
+          // Send the message to the client
+          break;
+        case "DIS":
+          // Remove the client from the list of clients
+          clients = clients.filter((client) => {
+            return client[socket.id] !== socket;
+          });
+          // Send the disconnection message to the client
+          break;
+        default:
+          // Send an error message to the client
+
+          break;
+      }
     } catch (error) {
       logger.error(error);
     }
   });
+
   socket.on("end", () => {
-    logger.info(`${socket.id} disconnected`);
     // Remove client from the list of clients
     clients = clients.filter((client) => {
-        return client[socket.id] !== socket;
+      return client[socket.id] !== socket;
     });
+    logger.info(`${socket.id} disconnected`);
   });
-  socket.write(Packet("MES", "hello client", new Date().toISOString()));
-  socket.end();
 });
 
 server.listen(9000, () => {

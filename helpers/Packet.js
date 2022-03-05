@@ -31,9 +31,9 @@ module.exports = {
     // Make type upper case
     type = type.toUpperCase();
     // Check if type is valid
-    if (type !== "MES" && type !== "EXC" && type !== "DIS") {
+    if (type !== "MES" && type !== "EXC" && type !== "DIS" && type !== "ERR") {
       throw new Error(
-        "Type must be one of MES(SAGE), EXC(HANGE), or DIS(CONNECT)"
+        "Type must be one of MES(SAGE), EXC(HANGE), DIS(CONNECT) or ERR(OR)"
       );
     }
     // Check if timestamp is valid
@@ -45,14 +45,14 @@ module.exports = {
 
     return `${type} - ${timestamp} - ${message}`;
   },
-    /**
-     * @param {String} packet the packet to be parsed
-     * @returns {Object<JSON>} an JSON object with the type, timestamp, and message
-     * @throws {Error} if the packet is not valid
-     * @example PacketParser("EXC - 2021-01-01T00:00:00.000Z - PUBLIC RSA KEY");
-     * @example PacketParser("MES - 2021-01-01T00:00:00.000Z - hello");
-     * @example PacketParser("DIS - 2021-01-01T00:00:00.000Z - goodbye");
-     * */
+  /**
+   * @param {String} packet the packet to be parsed
+   * @returns {Object<JSON>} an JSON object with the type, timestamp, and message
+   * @throws {Error} if the packet is not valid
+   * @example PacketParser("EXC - 2021-01-01T00:00:00.000Z - PUBLIC RSA KEY");
+   * @example PacketParser("MES - 2021-01-01T00:00:00.000Z - hello");
+   * @example PacketParser("DIS - 2021-01-01T00:00:00.000Z - goodbye");
+   * */
   PacketParser: (packet) => {
     // parse data by using slice
     let type = packet.slice(0, 3);
@@ -63,7 +63,7 @@ module.exports = {
     let timestamp = packet.slice(6, 30);
     // Check if timestamp is valid
     try {
-      new Date(timestamp);
+      timestamp = new Date(timestamp);
     } catch (error) {
       throw new Error("Timestamp must be a valid date");
     }
